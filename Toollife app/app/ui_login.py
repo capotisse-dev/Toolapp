@@ -188,6 +188,14 @@ class LoginPage(tk.Frame):
             command=self.check
         ).pack(pady=20)
 
+        tk.Label(
+            card,
+            text="Default logins: admin / admin  •  super / super",
+            font=("Arial", 9),
+            bg=controller.colors["header_bg"],
+            fg=controller.colors["fg"]
+        ).pack()
+
         # Enter key triggers login
         self.u.bind("<Return>", lambda e: self.check())
         self.p.bind("<Return>", lambda e: self.check())

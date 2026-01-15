@@ -1,11 +1,11 @@
 {
   "super": {
-    "password": "super123",
+    "password": "super",
     "role": "Top (Super User)",
     "line": "Both"
   },
   "admin": {
-    "password": "admin123",
+    "password": "admin",
     "role": "Admin",
     "line": "Both"
   },

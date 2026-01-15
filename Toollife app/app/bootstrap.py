@@ -72,6 +72,27 @@ def _ensure_json_files() -> None:
         )
 
 
+def _ensure_default_users() -> None:
+    """Ensure default admin/super accounts exist."""
+    users = {}
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r", encoding="utf-8") as f:
+                users = json.load(f) or {}
+        except json.JSONDecodeError:
+            users = {}
+
+    changed = False
+    for username, defaults in DEFAULT_USERS.items():
+        if username not in users:
+            users[username] = defaults
+            changed = True
+
+    if changed:
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2)
+
+
 # ----------------------------
 # Excel helpers (legacy storage)
 # ----------------------------
@@ -139,6 +160,7 @@ def ensure_app_initialized() -> None:
 
     # Legacy files still used elsewhere in the app (for now)
     _ensure_json_files()
+    _ensure_default_users()
 
     # Ensure month Excel exists and matches schema
     now = datetime.now()

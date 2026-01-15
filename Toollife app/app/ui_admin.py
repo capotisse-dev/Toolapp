@@ -66,7 +66,14 @@ class AdminUI(tk.Frame):
         tk.Button(top, text="Refresh", command=self.refresh_users).pack(side="right")
 
         # Form
-        form = tk.LabelFrame(parent, text="New User", padx=10, pady=10)
+        form = tk.LabelFrame(
+            parent,
+            text="New User",
+            padx=10,
+            pady=10,
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        )
         form.pack(fill="x", padx=10, pady=(0, 10))
 
         self.var_username = tk.StringVar(value="")
@@ -78,9 +85,16 @@ class AdminUI(tk.Frame):
         self._form_row(form, "Password", self.var_password, show="*")
         self._form_row(form, "Display Name", self.var_name)
 
-        r = tk.Frame(form)
+        r = tk.Frame(form, bg=self.controller.colors["bg"])
         r.pack(fill="x", pady=4)
-        tk.Label(r, text="Role", width=14, anchor="w").pack(side="left")
+        tk.Label(
+            r,
+            text="Role",
+            width=14,
+            anchor="w",
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        ).pack(side="left")
         ttk.Combobox(r, textvariable=self.var_role, state="readonly", values=self.ROLE_OPTIONS, width=24).pack(side="left")
 
         btns = tk.Frame(form)
@@ -88,7 +102,14 @@ class AdminUI(tk.Frame):
         tk.Button(btns, text="Create User", command=self.create_user).pack(side="right")
 
         # User list (read-only display)
-        listbox_frame = tk.LabelFrame(parent, text="Existing Users (read-only)", padx=10, pady=10)
+        listbox_frame = tk.LabelFrame(
+            parent,
+            text="Existing Users (read-only)",
+            padx=10,
+            pady=10,
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        )
         listbox_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         cols = ("username", "name", "role")
@@ -115,9 +136,16 @@ class AdminUI(tk.Frame):
         self.refresh_users()
 
     def _form_row(self, parent, label, var, show=None):
-        r = tk.Frame(parent)
+        r = tk.Frame(parent, bg=self.controller.colors["bg"])
         r.pack(fill="x", pady=4)
-        tk.Label(r, text=label, width=14, anchor="w").pack(side="left")
+        tk.Label(
+            r,
+            text=label,
+            width=14,
+            anchor="w",
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        ).pack(side="left")
         e = tk.Entry(r, textvariable=var, show=show) if show else tk.Entry(r, textvariable=var)
         e.pack(side="left", fill="x", expand=True)
 
