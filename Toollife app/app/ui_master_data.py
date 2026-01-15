@@ -286,7 +286,7 @@ class MasterDataUI(tk.Frame):
         raw = load_json(PARTS_FILE, {"parts": []})
         self.parts_store = _normalize_parts_store(raw)
         # Auto-heal file format once it loads correctly
-        save_json(PARTS_FILE, self.parts_store
+        save_json(PARTS_FILE, self.parts_store)
 
         for p in self.parts_store.get("parts", []):
             self.part_tree.insert("", "end", values=(
