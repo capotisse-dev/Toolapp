@@ -7,6 +7,7 @@ import pandas as pd
 
 from .ui_common import HeaderFrame
 from .storage import get_df, safe_int, safe_float
+from .config import DATA_DIR
 
 
 class DashboardUI(tk.Frame):
@@ -37,6 +38,7 @@ class DashboardUI(tk.Frame):
         ).pack(side="left")
 
         tk.Button(top, text="Refresh", command=self.refresh).pack(side="right")
+        tk.Button(top, text="Export CSV", command=self.export_csv).pack(side="right", padx=(0, 8))
 
         # Controls
         ctrl = tk.Frame(self, bg=controller.colors["bg"], padx=10, pady=(0, 8))
@@ -79,6 +81,12 @@ class DashboardUI(tk.Frame):
         self.tree_part = self._make_pareto_tree(self.tab_part, key_label="Part_Number")
 
         self.tree_trend = self._make_trend_tree(self.tab_trend)
+
+        self._out_defect = None
+        self._out_machine = None
+        self._out_tool = None
+        self._out_part = None
+        self._out_trend = None
 
         self.refresh()
 
@@ -173,19 +181,19 @@ class DashboardUI(tk.Frame):
         topn = self._topn()
 
         # Build paretos
-        self._fill_pareto(self.tree_defect, sub, key="Defect_Code", topn=topn, label="Defect")
-        self._fill_pareto(self.tree_machine, sub, key="Machine", topn=topn, label="Machine")
-        self._fill_pareto(self.tree_tool, sub, key="Tool_Num", topn=topn, label="Tool")
-        self._fill_pareto(self.tree_part, sub, key="Part_Number", topn=topn, label="Part")
+        self._out_defect = self._fill_pareto(self.tree_defect, sub, key="Defect_Code", topn=topn, label="Defect")
+        self._out_machine = self._fill_pareto(self.tree_machine, sub, key="Machine", topn=topn, label="Machine")
+        self._out_tool = self._fill_pareto(self.tree_tool, sub, key="Tool_Num", topn=topn, label="Tool")
+        self._out_part = self._fill_pareto(self.tree_part, sub, key="Part_Number", topn=topn, label="Part")
 
         # Trend by day
-        self._fill_trend(self.tree_trend, sub)
+        self._out_trend = self._fill_trend(self.tree_trend, sub)
 
         self.status.config(text=f"{len(sub)} rows from {fname} | Window: {start.date()} → {end.date()}")
 
     def _fill_pareto(self, tree, df, key: str, topn: int, label: str):
         if key not in df.columns:
-            return
+            return pd.DataFrame()
 
         # If you want defect pareto to focus only on defects, uncomment below:
         # if key == "Defect_Code" and "Defects_Present" in df.columns:
@@ -224,10 +232,11 @@ class DashboardUI(tk.Frame):
                 float(r["copq_est"]),
                 float(r["pct_defects"])
             ))
+        return out
 
     def _fill_trend(self, tree, df):
         if df.empty:
-            return
+            return pd.DataFrame()
 
         df = df.copy()
         df["_day"] = df["_dt"].dt.strftime("%Y-%m-%d")
@@ -253,3 +262,37 @@ class DashboardUI(tk.Frame):
                 int(r["andon_ct"]),
                 int(r["high_risk_ct"]),
             ))
+        return out
+
+    def export_csv(self):
+        if all(out is None or out.empty for out in [
+            self._out_defect,
+            self._out_machine,
+            self._out_tool,
+            self._out_part,
+            self._out_trend,
+        ]):
+            messagebox.showwarning("Nothing", "Refresh the dashboard before exporting.")
+            return
+
+        now = datetime.now()
+        stamp = now.strftime("%Y_%m_%d_%H%M")
+        exports = []
+
+        def write_csv(df, suffix):
+            if df is None or df.empty:
+                return
+            path = f"{DATA_DIR}/dashboard_{suffix}_{stamp}.csv"
+            df.to_csv(path, index=False)
+            exports.append(path)
+
+        write_csv(self._out_defect, "pareto_defect")
+        write_csv(self._out_machine, "pareto_machine")
+        write_csv(self._out_tool, "pareto_tool")
+        write_csv(self._out_part, "pareto_part")
+        write_csv(self._out_trend, "trend_daily")
+
+        if exports:
+            messagebox.showinfo("Exported", "Exported CSV files:\n" + "\n".join(exports))
+        else:
+            messagebox.showwarning("Nothing", "No data available to export.")

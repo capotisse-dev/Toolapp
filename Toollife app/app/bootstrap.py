@@ -21,7 +21,8 @@ from .config import (
     DEFAULT_NCRS, DEFAULT_ACTIONS
 )
 
-from .db import init_db, seed_default_users
+from .db import init_db, seed_default_users, database_needs_migration
+from .migrate_to_sqlite import run_migration
 
 
 # ----------------------------
@@ -154,13 +155,15 @@ def ensure_app_initialized() -> None:
     """
     _ensure_dirs()
 
-    # SQLite (new system of record)
-    init_db()
-    seed_default_users(DEFAULT_USERS)
-
     # Legacy files still used elsewhere in the app (for now)
     _ensure_json_files()
     _ensure_default_users()
+
+    # SQLite (new system of record)
+    init_db()
+    seed_default_users(DEFAULT_USERS)
+    if database_needs_migration():
+        run_migration()
 
     # Ensure month Excel exists and matches schema
     now = datetime.now()
