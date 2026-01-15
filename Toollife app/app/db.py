@@ -233,3 +233,13 @@ def get_scrap_costs_simple():
             """
         ).fetchall()
         return {r["part_number"]: float(r["scrap_cost"]) for r in rows}
+
+
+def database_needs_migration() -> bool:
+    """Return True if core tables are empty (safe indicator for seeding/migration)."""
+    with connect() as conn:
+        for table in ("parts", "tools", "part_costs", "lines"):
+            row = conn.execute(f"SELECT 1 FROM {table} LIMIT 1").fetchone()
+            if row:
+                return False
+    return True

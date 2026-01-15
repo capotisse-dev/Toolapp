@@ -46,6 +46,7 @@ class ShiftHandoffUI(tk.Frame):
 
         tk.Button(top, text="Generate", command=self.generate).pack(side="right")
         tk.Button(top, text="Export Excel", command=self.export).pack(side="right", padx=(0, 8))
+        tk.Button(top, text="Export CSV", command=self.export_csv).pack(side="right", padx=(0, 8))
 
         # Range selector
         rng = tk.Frame(self, bg=controller.colors["bg"], padx=10, pady=(0, 8))
@@ -253,5 +254,26 @@ class ShiftHandoffUI(tk.Frame):
                 self._last_summary_rows.drop(columns=["_score"], errors="ignore").to_excel(writer, sheet_name="Top_Offenders", index=False)
 
             messagebox.showinfo("Exported", f"Exported:\n{path}")
+        except Exception as e:
+            messagebox.showerror("Export failed", str(e))
+
+    def export_csv(self):
+        if self._last_df is None or self._last_summary_rows is None:
+            messagebox.showwarning("Nothing to export", "Generate a report first.")
+            return
+
+        now = datetime.now()
+        stamp = now.strftime("%Y_%m_%d_%H%M")
+        exports = []
+
+        try:
+            filtered_path = f"{DATA_DIR}/shift_handoff_filtered_{stamp}.csv"
+            summary_path = f"{DATA_DIR}/shift_handoff_top_offenders_{stamp}.csv"
+
+            self._last_df.drop(columns=["_dt"], errors="ignore").to_csv(filtered_path, index=False)
+            self._last_summary_rows.drop(columns=["_score"], errors="ignore").to_csv(summary_path, index=False)
+
+            exports.extend([filtered_path, summary_path])
+            messagebox.showinfo("Exported", "Exported CSV files:\n" + "\n".join(exports))
         except Exception as e:
             messagebox.showerror("Export failed", str(e))

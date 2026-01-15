@@ -41,6 +41,7 @@ class RepeatOffendersUI(tk.Frame):
 
         tk.Button(top, text="Refresh", command=self.refresh).pack(side="right")
         tk.Button(top, text="Export Excel", command=self.export).pack(side="right", padx=(0, 8))
+        tk.Button(top, text="Export CSV", command=self.export_csv).pack(side="right", padx=(0, 8))
 
         # Controls
         ctrl = tk.Frame(self, bg=controller.colors["bg"], padx=10, pady=(0, 8))
@@ -241,3 +242,28 @@ class RepeatOffendersUI(tk.Frame):
             messagebox.showinfo("Exported", f"Exported:\n{path}")
         except Exception as e:
             messagebox.showerror("Export failed", str(e))
+
+    def export_csv(self):
+        if self._out_part is None and self._out_mach is None and self._out_tool is None:
+            messagebox.showwarning("Nothing", "Nothing to export yet. Refresh first.")
+            return
+
+        now = datetime.now()
+        stamp = now.strftime("%Y_%m_%d_%H%M")
+        exports = []
+
+        def write_csv(df, suffix):
+            if df is None or df.empty:
+                return
+            path = f"{DATA_DIR}/repeat_offenders_{suffix}_{stamp}.csv"
+            df.drop(columns=["_score"], errors="ignore").to_csv(path, index=False)
+            exports.append(path)
+
+        write_csv(self._out_part, "part_defect")
+        write_csv(self._out_mach, "machine")
+        write_csv(self._out_tool, "tool")
+
+        if exports:
+            messagebox.showinfo("Exported", "Exported CSV files:\n" + "\n".join(exports))
+        else:
+            messagebox.showwarning("Nothing", "No data available to export.")
