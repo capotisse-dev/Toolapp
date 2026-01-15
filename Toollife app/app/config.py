@@ -133,8 +133,8 @@ COLUMNS = [
 # DEFAULT STORES (bootstrap expects these names) :contentReference[oaicite:7]{index=7}
 # ----------------------------
 DEFAULT_USERS = {
-    "super": {"password": "super123", "role": "Top (Super User)", "name": "Super User", "line": "Both"},
-    "admin": {"password": "admin123", "role": "Admin", "name": "Admin User", "line": "Both"},
+    "super": {"password": "super", "role": "Top (Super User)", "name": "Super User", "line": "Both"},
+    "admin": {"password": "admin", "role": "Admin", "name": "Admin User", "line": "Both"},
 }
 
 DEFAULT_REASONS = []

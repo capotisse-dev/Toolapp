@@ -3,8 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 from .bootstrap import ensure_app_initialized
-from .config import USERS_FILE
-from .storage import load_json
+from .db import get_user
 from .audit import log_audit
 from .ui_common import LIGHT, DARK
 
@@ -188,12 +187,19 @@ class LoginPage(tk.Frame):
             command=self.check
         ).pack(pady=20)
 
+        tk.Label(
+            card,
+            text="Default logins: admin / admin  •  super / super",
+            font=("Arial", 9),
+            bg=controller.colors["header_bg"],
+            fg=controller.colors["fg"]
+        ).pack()
+
         # Enter key triggers login
         self.u.bind("<Return>", lambda e: self.check())
         self.p.bind("<Return>", lambda e: self.check())
 
     def check(self):
-        users = load_json(USERS_FILE, {})
         u = self.u.get().strip()
         p = self.p.get()
 
@@ -201,11 +207,11 @@ class LoginPage(tk.Frame):
             messagebox.showerror("Error", "Enter username.")
             return
 
-        if u not in users:
+        rec = get_user(u)
+        if not rec or not rec.get("is_active", 1):
             messagebox.showerror("Error", "Invalid credentials.")
             return
 
-        rec = users[u]
         if rec.get("password", "") != p:
             messagebox.showerror("Error", "Invalid credentials.")
             return

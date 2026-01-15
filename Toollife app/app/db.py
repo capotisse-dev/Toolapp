@@ -108,6 +108,67 @@ def seed_default_users(default_users: Dict[str, Dict[str, Any]]) -> None:
             )
 
 
+def get_user(username: str) -> Optional[Dict[str, Any]]:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT username, password, role, name, line, is_active
+            FROM users
+            WHERE username=?
+            """,
+            (username,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def list_users_simple() -> List[Dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT username, name, role, line
+            FROM users
+            WHERE is_active=1
+            ORDER BY username
+            """
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def create_user(
+    username: str,
+    password: str,
+    role: str,
+    name: str = "",
+    line: str = "Both",
+) -> bool:
+    with connect() as conn:
+        cur = conn.execute(
+            """
+            INSERT OR IGNORE INTO users(username, password, role, name, line)
+            VALUES(?,?,?,?,?)
+            """,
+            (username, password, role, name, line),
+        )
+        return cur.rowcount > 0
+
+
+def ensure_user_from_legacy(username: str, payload: Dict[str, Any]) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO users(username, password, role, name, line)
+            VALUES(?,?,?,?,?)
+            """,
+            (
+                username,
+                payload.get("password", ""),
+                payload.get("role", "User"),
+                payload.get("name", ""),
+                payload.get("line", "Both"),
+            ),
+        )
+
+
 def ensure_lines(names: Iterable[str]) -> None:
     with connect() as conn:
         for n in names:

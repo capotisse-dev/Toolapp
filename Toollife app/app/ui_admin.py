@@ -6,6 +6,7 @@ from .ui_common import HeaderFrame
 from .storage import load_json, save_json
 from .config import USERS_FILE
 from .ui_action_center import ActionCenterUI
+from .db import list_users_simple, create_user
 
 
 class AdminUI(tk.Frame):
@@ -66,7 +67,14 @@ class AdminUI(tk.Frame):
         tk.Button(top, text="Refresh", command=self.refresh_users).pack(side="right")
 
         # Form
-        form = tk.LabelFrame(parent, text="New User", padx=10, pady=10)
+        form = tk.LabelFrame(
+            parent,
+            text="New User",
+            padx=10,
+            pady=10,
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        )
         form.pack(fill="x", padx=10, pady=(0, 10))
 
         self.var_username = tk.StringVar(value="")
@@ -78,9 +86,16 @@ class AdminUI(tk.Frame):
         self._form_row(form, "Password", self.var_password, show="*")
         self._form_row(form, "Display Name", self.var_name)
 
-        r = tk.Frame(form)
+        r = tk.Frame(form, bg=self.controller.colors["bg"])
         r.pack(fill="x", pady=4)
-        tk.Label(r, text="Role", width=14, anchor="w").pack(side="left")
+        tk.Label(
+            r,
+            text="Role",
+            width=14,
+            anchor="w",
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        ).pack(side="left")
         ttk.Combobox(r, textvariable=self.var_role, state="readonly", values=self.ROLE_OPTIONS, width=24).pack(side="left")
 
         btns = tk.Frame(form)
@@ -88,7 +103,14 @@ class AdminUI(tk.Frame):
         tk.Button(btns, text="Create User", command=self.create_user).pack(side="right")
 
         # User list (read-only display)
-        listbox_frame = tk.LabelFrame(parent, text="Existing Users (read-only)", padx=10, pady=10)
+        listbox_frame = tk.LabelFrame(
+            parent,
+            text="Existing Users (read-only)",
+            padx=10,
+            pady=10,
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        )
         listbox_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         cols = ("username", "name", "role")
@@ -115,9 +137,16 @@ class AdminUI(tk.Frame):
         self.refresh_users()
 
     def _form_row(self, parent, label, var, show=None):
-        r = tk.Frame(parent)
+        r = tk.Frame(parent, bg=self.controller.colors["bg"])
         r.pack(fill="x", pady=4)
-        tk.Label(r, text=label, width=14, anchor="w").pack(side="left")
+        tk.Label(
+            r,
+            text=label,
+            width=14,
+            anchor="w",
+            bg=self.controller.colors["bg"],
+            fg=self.controller.colors["fg"],
+        ).pack(side="left")
         e = tk.Entry(r, textvariable=var, show=show) if show else tk.Entry(r, textvariable=var)
         e.pack(side="left", fill="x", expand=True)
 
@@ -126,13 +155,23 @@ class AdminUI(tk.Frame):
         for i in self.tree.get_children():
             self.tree.delete(i)
 
-        users = load_json(USERS_FILE, {}) or {}
-        # users format expected: { "username": { "password": "...", "role": "...", "name": "..." }, ... }
+        try:
+            users = list_users_simple()
+        except Exception:
+            users = []
+        if not users:
+            legacy = load_json(USERS_FILE, {}) or {}
+            for username in sorted(legacy.keys()):
+                u = legacy.get(username, {}) or {}
+                users.append({
+                    "username": username,
+                    "name": u.get("name", ""),
+                    "role": u.get("role", ""),
+                })
 
-        for username in sorted(users.keys()):
-            u = users.get(username, {}) or {}
+        for u in users:
             self.tree.insert("", "end", values=(
-                username,
+                u.get("username", ""),
                 u.get("name", ""),
                 u.get("role", "")
             ))
@@ -162,10 +201,16 @@ class AdminUI(tk.Frame):
             messagebox.showerror("Error", f"Username '{username}' already exists.")
             return
 
+        created = create_user(username, password, role, name, "Both")
+        if not created:
+            messagebox.showerror("Error", f"Username '{username}' already exists.")
+            return
+
         users[username] = {
             "password": password,   # NOTE: plain text; we can hash later if you want
             "role": role,
-            "name": name
+            "name": name,
+            "line": "Both",
         }
 
         save_json(USERS_FILE, users)
